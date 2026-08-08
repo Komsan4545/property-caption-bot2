@@ -1,5 +1,4 @@
 Flask==3.0.3
 line-bot-sdk==3.11.0
-google-genai>=0.1.0
-pydantic>=2.0
+google-generativeai==0.8.3
 gunicorn==22.0.0

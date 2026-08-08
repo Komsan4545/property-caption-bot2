@@ -4,16 +4,15 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-import google.generativeai as genai
+from google import genai
 
 app = Flask(__name__)
 
 line_bot_api = LineBotApi(os.environ.get('LINE_CHANNEL_ACCESS_TOKEN'))
 handler = WebhookHandler(os.environ.get('LINE_CHANNEL_SECRET', ''))
 
-# ตั้งค่า Gemini API
-genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-1.5-flash')
+# ตั้งค่า Gemini Client ด้วย SDK ใหม่
+client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
 
 @app.route("/", methods=['GET'])
 def index():
@@ -43,7 +42,11 @@ def process_gemini(reply_token, user_message):
     5. แฮชแท็ก (#) ที่เกี่ยวข้อง
     """
     try:
-        response = model.generate_content(prompt)
+        # ใช้โมเดล gemini-2.5-flash
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
         reply_text = response.text
     except Exception as e:
         reply_text = f"ขออภัย เกิดข้อผิดพลาดในการประมวลผล: {str(e)}"

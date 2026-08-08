@@ -48,7 +48,7 @@ def process_gemini(reply_token, user_message):
             "Content-Type": "application/json"
         }
         data = {
-            "model": "google/gemini-2.0-flash-lite-001",
+            "model": "google/gemini-2.0-flash-exp:free",
             "messages": [{"role": "user", "content": prompt}]
         }
         

@@ -1,18 +1,17 @@
 import os
+import requests
 import threading
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from google import genai
 
 app = Flask(__name__)
 
 line_bot_api = LineBotApi(os.environ.get('LINE_CHANNEL_ACCESS_TOKEN'))
 handler = WebhookHandler(os.environ.get('LINE_CHANNEL_SECRET', ''))
 
-# ตั้งค่า Client 
-client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
+OPENROUTER_API_KEY = os.environ.get('GEMINI_API_KEY') # นำ OpenRouter Key มาวางในช่อง GEMINI_API_KEY บน Render ได้เลย
 
 @app.route("/", methods=['GET'])
 def index():
@@ -41,13 +40,26 @@ def process_gemini(reply_token, user_message):
     4. Call to Action ให้ติดต่อสอบถาม
     5. แฮชแท็ก (#) ที่เกี่ยวข้อง
     """
+    
     try:
-        # ใช้ gemini-2.0-flash โดยไม่ใส่คำว่า models/ นำหน้า
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-        )
-        reply_text = response.text
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "google/gemini-2.0-flash-lite-001",
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        
+        response = requests.post(url, headers=headers, json=data)
+        result = response.json()
+        
+        if "choices" in result:
+            reply_text = result["choices"][0]["message"]["content"]
+        else:
+            reply_text = f"เกิดข้อผิดพลาด: {result.get('error', {}).get('message', 'Unknown error')}"
+
     except Exception as e:
         reply_text = f"ขออภัย เกิดข้อผิดพลาดในการประมวลผล: {str(e)}"
 
